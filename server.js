@@ -9,17 +9,13 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ================================
-// Validate Environment Variables
-// ================================
+// Validate API Key
 if (!process.env.GEMINI_API_KEY) {
-    console.error("❌ GEMINI_API_KEY is missing in .env file");
+    console.error("❌ GEMINI_API_KEY is missing");
     process.exit(1);
 }
 
-// ================================
 // Middleware
-// ================================
 app.use(cors());
 
 app.use(express.json({
@@ -37,14 +33,10 @@ app.use((req, res, next) => {
     next();
 });
 
-// ================================
 // Static Files
-// ================================
 app.use(express.static(path.join(__dirname)));
 
-// ================================
 // Gemini Setup
-// ================================
 const genAI = new GoogleGenerativeAI(
     process.env.GEMINI_API_KEY
 );
@@ -53,18 +45,18 @@ const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash"
 });
 
-// ================================
+// ======================
 // Routes
-// ================================
+// ======================
 
-// Home Page
+// Home Route
 app.get("/", (req, res) => {
     res.sendFile(
         path.join(__dirname, "index.html")
     );
 });
 
-// Health Check Route
+// Health Check
 app.get("/health", (req, res) => {
     res.status(200).json({
         status: "OK",
@@ -77,18 +69,95 @@ app.post("/chat", async (req, res) => {
 
     try {
 
-        const { message } = req.body;
+        const { message, feature } = req.body;
 
-        // Validation
         if (!message || !message.trim()) {
             return res.status(400).json({
                 reply: "Please enter a valid message."
             });
         }
 
-        const result = await model.generateContent(
-            message.trim()
-        );
+        let prompt = "";
+
+        switch (feature) {
+
+            case "Summarize":
+
+                prompt = `
+You are AI Study Buddy.
+
+Summarize the following content in 5-7 short bullet points.
+
+Rules:
+- Keep it concise.
+- Focus only on the main ideas.
+- Do NOT explain line by line.
+- Use simple student-friendly language.
+
+Content:
+${message}
+`;
+                break;
+
+            case "Quiz":
+
+                prompt = `
+You are AI Study Buddy.
+
+Create 5 multiple-choice questions.
+
+Format:
+
+1. Question
+A)
+B)
+C)
+D)
+
+Answer: X
+
+Content:
+${message}
+`;
+                break;
+
+            case "Flashcards":
+
+                prompt = `
+You are AI Study Buddy.
+
+Create at least 5 flashcards.
+
+Format:
+
+Q: Question
+A: Answer
+
+Content:
+${message}
+`;
+                break;
+
+            case "Explain":
+
+            default:
+
+                prompt = `
+You are AI Study Buddy.
+
+Explain the topic in a simple student-friendly way.
+
+Rules:
+- Use easy language.
+- Give examples.
+- Make learning easy.
+
+Topic:
+${message}
+`;
+        }
+
+        const result = await model.generateContent(prompt);
 
         const reply =
             result?.response?.text() ||
@@ -100,7 +169,7 @@ app.post("/chat", async (req, res) => {
 
     } catch (error) {
 
-        console.error("Gemini Error:", error.message);
+        console.error("Gemini Error:", error);
 
         return res.status(500).json({
             reply:
@@ -109,18 +178,14 @@ app.post("/chat", async (req, res) => {
     }
 });
 
-// ================================
 // 404 Handler
-// ================================
 app.use((req, res) => {
     res.status(404).json({
         error: "Route not found"
     });
 });
 
-// ================================
 // Start Server
-// ================================
 app.listen(PORT, () => {
 
     console.log("================================");

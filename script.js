@@ -1,4 +1,7 @@
+let currentFeature = "Explain";
+
 function sendFeature(feature) {
+    currentFeature = feature;
     document.getElementById("userInput").value = feature;
 }
 
@@ -37,7 +40,10 @@ async function sendMessage() {
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ message })
+            body: JSON.stringify({
+                message,
+                feature: currentFeature
+            })
         });
 
         // Check server response

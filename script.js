@@ -2,9 +2,22 @@ let currentFeature = "Explain";
 
 function sendFeature(feature) {
     currentFeature = feature;
-    document.getElementById("userInput").value = feature;
-}
 
+    const input = document.getElementById("userInput");
+
+    if (feature === "Quiz") {
+        input.placeholder = "Enter a topic for quiz generation...";
+    } else if (feature === "Explain") {
+        input.placeholder = "Enter a topic to explain...";
+    } else if (feature === "Summarize") {
+        input.placeholder = "Paste notes to summarize...";
+    } else if (feature === "Flashcards") {
+        input.placeholder = "Enter a topic for flashcards...";
+    }
+
+    input.value = "";
+    input.focus();
+}
 async function sendMessage() {
     const input = document.getElementById("userInput");
     const message = input.value.trim();

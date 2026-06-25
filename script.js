@@ -3,83 +3,100 @@ function sendFeature(feature) {
 }
 
 async function sendMessage() {
-
     const input = document.getElementById("userInput");
     const message = input.value.trim();
 
-    if (message === "") {
+    if (!message) {
         alert("Please enter a question!");
         return;
     }
 
     const chatBox = document.getElementById("chat-box");
 
-    // Show user message
-    chatBox.innerHTML += `
-        <div class="user">
-            <strong>You:</strong> ${message}
-        </div>
-    `;
+    // Display user message
+    const userDiv = document.createElement("div");
+    userDiv.className = "user";
+    userDiv.innerHTML = `<strong>You:</strong> ${escapeHtml(message)}`;
+    chatBox.appendChild(userDiv);
 
     input.value = "";
+    input.focus();
 
-    // Show loading message
-    chatBox.innerHTML += `
-        <div class="bot" id="loading">
-            <strong>AI:</strong> Thinking...
-        </div>
-    `;
+    // Loading message
+    const loadingDiv = document.createElement("div");
+    loadingDiv.className = "bot";
+    loadingDiv.id = "loading";
+    loadingDiv.innerHTML = `<strong>AI:</strong> Thinking...`;
+    chatBox.appendChild(loadingDiv);
 
-    chatBox.scrollTop = chatBox.scrollHeight;
+    scrollToBottom();
 
     try {
-
-            const response = await fetch("/chat",   {
+        const response = await fetch("/chat", {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-                message: message
-            })
+            body: JSON.stringify({ message })
         });
+
+        // Check server response
+        if (!response.ok) {
+            throw new Error(`Server Error: ${response.status}`);
+        }
 
         const data = await response.json();
 
-        // Remove loading message
-        document.getElementById("loading").remove();
+        // Remove loading
+        loadingDiv.remove();
 
-        // Show AI response
-        chatBox.innerHTML += `
-            <div class="bot">
-                <strong>AI:</strong> ${data.reply}
-            </div>
+        // Show AI reply
+        const botDiv = document.createElement("div");
+        botDiv.className = "bot";
+        botDiv.innerHTML = `
+            <strong>AI:</strong> ${escapeHtml(data.reply || "No response received.")}
         `;
 
-        chatBox.scrollTop = chatBox.scrollHeight;
+        chatBox.appendChild(botDiv);
+        scrollToBottom();
 
     } catch (error) {
+        console.error("Error:", error);
 
-        const loading = document.getElementById("loading");
-        if (loading) loading.remove();
+        loadingDiv.remove();
 
-        chatBox.innerHTML += `
-            <div class="bot">
-                <strong>AI:</strong> Error connecting to server.
-            </div>
+        const errorDiv = document.createElement("div");
+        errorDiv.className = "bot error";
+        errorDiv.innerHTML = `
+            <strong>AI:</strong> Unable to connect to the server. Please try again.
         `;
 
-        console.error(error);
+        chatBox.appendChild(errorDiv);
+        scrollToBottom();
     }
 }
 
-// Allow Enter key to send message
+// Enter key support
 document.addEventListener("DOMContentLoaded", () => {
     const input = document.getElementById("userInput");
 
-    input.addEventListener("keypress", function(event) {
-        if (event.key === "Enter") {
+    input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
             sendMessage();
         }
     });
 });
+
+// Auto scroll
+function scrollToBottom() {
+    const chatBox = document.getElementById("chat-box");
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// Prevent HTML injection
+function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+}

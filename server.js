@@ -9,54 +9,132 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Debug logs
-console.log("Current directory:", __dirname);
-console.log("Files in directory:", fs.readdirSync(__dirname));
+// ================================
+// Validate Environment Variables
+// ================================
+if (!process.env.GEMINI_API_KEY) {
+    console.error("❌ GEMINI_API_KEY is missing in .env file");
+    process.exit(1);
+}
 
+// ================================
 // Middleware
+// ================================
 app.use(cors());
-app.use(express.json());
 
-// Serve static files
-app.use(express.static(__dirname));
+app.use(express.json({
+    limit: "1mb"
+}));
 
-// Gemini AI Setup
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({
-  model: "gemini-2.5-flash",
+app.use(express.urlencoded({
+    extended: true
+}));
+
+// Security Headers
+app.use((req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    next();
 });
 
-// Home Route
+// ================================
+// Static Files
+// ================================
+app.use(express.static(path.join(__dirname)));
+
+// ================================
+// Gemini Setup
+// ================================
+const genAI = new GoogleGenerativeAI(
+    process.env.GEMINI_API_KEY
+);
+
+const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash"
+});
+
+// ================================
+// Routes
+// ================================
+
+// Home Page
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+    res.sendFile(
+        path.join(__dirname, "index.html")
+    );
+});
+
+// Health Check Route
+app.get("/health", (req, res) => {
+    res.status(200).json({
+        status: "OK",
+        uptime: process.uptime()
+    });
 });
 
 // Chat Route
 app.post("/chat", async (req, res) => {
-  try {
-    const { message } = req.body;
 
-    if (!message) {
-      return res.status(400).json({
-        reply: "Please enter a message.",
-      });
+    try {
+
+        const { message } = req.body;
+
+        // Validation
+        if (!message || !message.trim()) {
+            return res.status(400).json({
+                reply: "Please enter a valid message."
+            });
+        }
+
+        const result = await model.generateContent(
+            message.trim()
+        );
+
+        const reply =
+            result?.response?.text() ||
+            "No response generated.";
+
+        return res.status(200).json({
+            reply
+        });
+
+    } catch (error) {
+
+        console.error("Gemini Error:", error.message);
+
+        return res.status(500).json({
+            reply:
+                "⚠️ Sorry, I couldn't process your request right now."
+        });
     }
-
-    const result = await model.generateContent(message);
-    const reply = result.response.text();
-
-    res.json({ reply });
-
-  } catch (error) {
-    console.error("Gemini Error:", error);
-
-    res.status(500).json({
-      reply: "Sorry, something went wrong while generating the response.",
-    });
-  }
 });
 
+// ================================
+// 404 Handler
+// ================================
+app.use((req, res) => {
+    res.status(404).json({
+        error: "Route not found"
+    });
+});
+
+// ================================
 // Start Server
+// ================================
 app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
+
+    console.log("================================");
+    console.log(`✅ Server running on port ${PORT}`);
+    console.log(`📂 Directory: ${__dirname}`);
+
+    try {
+        console.log(
+            "📄 Files:",
+            fs.readdirSync(__dirname)
+        );
+    } catch (err) {
+        console.log("Could not read directory");
+    }
+
+    console.log("================================");
 });

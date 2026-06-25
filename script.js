@@ -34,7 +34,7 @@ async function sendMessage() {
 
     try {
 
-        const response = await fetch("http://localhost:3000/chat", {
+        const response = await fetch("https://aicte-batch-1-ai-study-buddy-ek6u.onrender.com/chat",  {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

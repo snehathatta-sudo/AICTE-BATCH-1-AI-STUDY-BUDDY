@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Study Buddy</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+
+        <h1>📚 AI Study Buddy</h1>
+
+        <p class="tagline">
+            Learn smarter with AI! Get topic explanations, note summaries,
+            quizzes, and flashcards instantly.
+        </p>
+
+        <div class="features">
+            <button onclick="sendFeature('Explain: ')">📖 Explain Topic</button>
+            <button onclick="sendFeature('Summarize: ')">📝 Summarize Notes</button>
+            <button onclick="sendFeature('Quiz: ')">❓ Generate Quiz</button>
+            <button onclick="sendFeature('Flashcards: ')">🗂️ Flashcards</button>
+        </div>
+
+        <div id="chat-box">
+            <div class="bot">
+                <strong>AI Study Buddy:</strong>
+                Hello! 👋 Ask me to explain a topic, summarize notes,
+                create quizzes, or generate flashcards.
+            </div>
+        </div>
+
+        <div class="input-area">
+            <input
+                type="text"
+                id="userInput"
+                placeholder="Type your question here..."
+            >
+            <button onclick="sendMessage()">Send</button>
+        </div>
+
+        <div class="examples">
+            <h3>Example Prompts</h3>
+            <ul>
+                <li>Explain: What is Artificial Intelligence?</li>
+                <li>Summarize: Paste your notes here</li>
+                <li>Quiz: Java Programming</li>
+                <li>Flashcards: DBMS Concepts</li>
+            </ul>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
